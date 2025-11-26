@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 Agency Dashboard - Next.js 16 Application
 
-## Getting Started
+A modern, secure dashboard application built to view and manage agency and employee contact data. This project was developed as a **Take Home Assignment for a Jr SDE position**.
 
-First, run the development server:
+![Next.js](https://img.shields.io/badge/Next.js-16.0-black) ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue) ![Clerk](https://img.shields.io/badge/Auth-Clerk-purple) ![Tailwind](https://img.shields.io/badge/Style-Tailwind-cyan)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 📋 Project Overview
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The application allows authenticated users to browse a database of government agencies and their associated contacts. It implements a specific business logic to limit the daily viewing of contact details to 50 items per user, simulating a "Freemium" SaaS model.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Key Features
+- **🔐 Secure Authentication:** Full integration with **Clerk** (Sign In / Sign Up / Protected Routes).
+- **🏢 Agency Directory:** Unrestricted access to the full list of agencies with search/pagination.
+- **👥 Contact Directory:** Access to employee details with a **daily limit**.
+- **⛔ Usage Limiter:** Server-side logic blocks access after **50 contacts** are viewed in a single day.
+- **💎 Premium Upgrade UI:** Displays a "Paywall" UI when the limit is reached.
+- **🎨 Modern UI/UX:** Built with Tailwind CSS, Glassmorphism effects, and Lucide Icons.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 🏗️ System Design & Architecture
 
-To learn more about Next.js, take a look at the following resources:
+The application uses a Server-Side strategy to handle data processing and limit enforcement without requiring a heavy database setup for this assignment.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Data Flow Diagram
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```mermaid
+graph TD
+    User[User] -->|Access App| Middleware{Authenticated?}
+    Middleware -->|No| Login[Clerk Login Page]
+    Middleware -->|Yes| Dashboard[Dashboard]
+    
+    Dashboard -->|Navigate| AgenciesPage[Agencies Page]
+    AgenciesPage -->|Server Side| ReadCSV1[Parse agencies.csv]
+    ReadCSV1 --> RenderAgencies[Render Table]
+    
+    Dashboard -->|Navigate| ContactsPage[Contacts Page]
+    ContactsPage -->|Server Side| LimitLogic{Usage < 50?}
+    
+    LimitLogic -->|Yes| UpdateUsage[Increment Secure Cookie +10]
+    UpdateUsage --> ReadCSV2[Parse contacts.csv]
+    ReadCSV2 --> RenderContacts[Render Table with Data]
+    
+    LimitLogic -->|No| BlockAccess[Show Upgrade/Paywall UI]
