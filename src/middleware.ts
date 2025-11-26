@@ -9,18 +9,21 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-
+  // 1. Protection par Clerk et récupération de l'ID utilisateur
   if (isProtectedRoute(req)) await auth.protect();
+  
+  const { userId } = await auth();
 
-
-  if (req.nextUrl.pathname === '/contacts') {
-
+  // 2. Logique du compteur pour la page Contacts
+  // On ne déclenche que si on est sur la page contacts ET qu'on a un userId
+  if (req.nextUrl.pathname === '/contacts' && userId) {
     const res = NextResponse.next();
-
-    const COOKIE_NAME = 'usage_journalier';
+    
+    // Le nom du cookie inclut maintenant l'ID utilisateur unique
+    const COOKIE_NAME = `usage_${userId}`;
     const MAX_DAILY_VIEWS = 50;
     const today = format(new Date(), 'yyyy-MM-dd');
-    const INCREMENT = 10; 
+    const INCREMENT = 10;
 
     let currentCount = 0;
     const cookie = req.cookies.get(COOKIE_NAME);
@@ -28,15 +31,17 @@ export default clerkMiddleware(async (auth, req) => {
     if (cookie) {
       try {
         const parsed = JSON.parse(cookie.value);
+        // On vérifie la date
         if (parsed.date === today) {
           currentCount = parsed.count;
         }
       } catch(e) {}
     }
 
+    // Si limite pas atteinte, on incrémente
     if (currentCount <= MAX_DAILY_VIEWS) {
         const newCount = currentCount + INCREMENT;
-
+        
         res.cookies.set(COOKIE_NAME, JSON.stringify({
             date: today,
             count: newCount
